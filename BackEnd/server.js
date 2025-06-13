@@ -1,18 +1,18 @@
 const express = require("express");
 const mqtt = require("mqtt");
-const admin = require("firebase-admin");
-const serviceAccount = require("./biodiversidee-b5654-firebase-adminsdk-fbsvc-2caaf35a96.json");
+const admin = require("firebase-admin"); /* required for firebase */
+const serviceAccount = require("./biodiversidee-b5654-firebase-adminsdk-fbsvc-2caaf35a96.json"); /* firebase credentials */
 const cors = require("cors");
-
+/** setup database */
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "biodiversidee-b5654.firebasestorage.app",
 });
 
 const db = admin.firestore();
-
+/** end database setup */
 const app = express();
-const client = mqtt.connect("mqtt://test.mosquitto.org");
+const client = mqtt.connect("mqtt://test.mosquitto.org"); /* MQTT broker. Need to update this (set as value read from file?) */
 app.use(cors());
 
 client.on("connect", () => {
@@ -23,15 +23,16 @@ client.on("connect", () => {
   });
 });
 
-client.on("message", async (topic, message) => {
+client.on("message", async (topic, message) => { /** receives topic and message from subscription. */
   const msg = message.toString();
-  console.log(`Topic: ${topic}, Message: ${msg}`);
+  console.log(`Topic: ${topic}, Message: ${msg}`); 
 
-  const detection = parseDetectionMessage(msg);
+  const detection = parseDetectionMessage(msg); /** parses message to a detection object. Check the method to see where this is */
   if (detection) {
-    try {
+    try { /** change this bit out for adding to postgres */
       await db.collection("bird_detections").add(detection);
       console.log("Bird detection saved to Firestore:", detection);
+      /** end of save to db bit */
     } catch (err) {
       console.error("Error saving to Firestore:", err);
     }
@@ -53,13 +54,13 @@ client.on("reconnect", () => {
 function parseDetectionMessage(msg) {
   const [detectionSummary, detailsPart] = msg
     .split("\n")
-    .map((line) => line.trim());
+    .map((line) => line.trim()); /** topic has both title and details separated by \n. We want the details. */
 
   const detection = { detection_summary: detectionSummary };
   const details = detailsPart.split(";").map((detail) => detail.trim());
 
   details.forEach((detail) => {
-    const match = detail.match(/^(\w+)\s(.+)$/);
+    const match = detail.match(/^(\w+)\s(.+)$/); /** splits on first space */
     if (match) {
       const [_, key, value] = match;
       switch (key) {
@@ -90,7 +91,9 @@ function parseDetectionMessage(msg) {
     }
   });
 
-  detection.timestamp = new Date();
+  detection.timestamp = new Date(); /** this gives the current time, not the detection time which can be different if there is a backlog of data being processed.
+  Need to change this to build the timestamp from date and time given  in the detection
+  */
 
   return detection;
 }

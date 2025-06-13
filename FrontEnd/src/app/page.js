@@ -26,9 +26,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { collection, getDocs, limit, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, query, where } from "firebase/firestore"; /** functions to retrieve from firestore. Need to add a db layer of functions in */
 import { useEffect, useState } from "react";
-import { FIRESTORE_DB } from "../../firebaseConfig";
+import { FIRESTORE_DB } from "../../firebaseConfig"; /** need to move database specifics out of the top page code. */
 
 export default function Page() {
   const [nameCount, setNameCount] = useState(null);
@@ -43,10 +43,10 @@ export default function Page() {
   const [shannonIndex, setShannonIndex] = useState(null);
   const [simpsonIndex, setSimpsonIndex] = useState(null);
 
-  useEffect(() => {
+  useEffect(() => { /** this is a Node.js thing that will update periodically when the page is changed. */
     setLoading(true);
 
-    (async () => {
+    (async () => { /** this block should be a single function call to return the data structure. */
       try {
         const currentDate = new Date();
         const startDateTime = new Date(
@@ -173,7 +173,8 @@ export default function Page() {
           ...aggregatedLocationNameCount[location],
         }));
 
-        setNameCount(nameCountArray);
+        /** the parts below should be in this function. The data structures used should be populated by a call to the db function for that table.` */
+        setNameCount(nameCountArray); /** update the state of the data triggering a redraw of the components depending on it.  */
         setShannonIndex(calculateShannonIndex(nameCountArray));
         setSimpsonIndex(calculateSimpsonIndex(nameCountArray));
 
@@ -318,7 +319,7 @@ export default function Page() {
 
                       {nameCount && lastUpdated && (
                         <MyInteractivePieChart
-                          data={nameCount}
+                          data={nameCount} /** gets loaded data */
                           dataKey={"count"}
                           nameKey={"name"}
                           title={"Bird Detections"}
@@ -368,7 +369,7 @@ export default function Page() {
                                     color: "hsl(var(--chart-1))",
                                   }}
                                 >
-                                  {nameCount.length}
+                                  {nameCount.length} <!-- total number of species -->
                                 </p>
                                 <p
                                   style={{ textAlign: "center", color: "grey" }}
@@ -385,7 +386,7 @@ export default function Page() {
                                       color: "hsl(var(--chart-2))",
                                     }}
                                   >
-                                    {shannonIndex.toFixed(4)}
+                                    {shannonIndex.toFixed(4)} <!-- Gets loaded data -->
                                   </p>
                                   <p
                                     style={{
@@ -414,7 +415,7 @@ export default function Page() {
                                       color: "hsl(var(--chart-2))",
                                     }}
                                   >
-                                    {simpsonIndex.toFixed(4)}
+                                    {simpsonIndex.toFixed(4)} <!-- Gets loaded data -->
                                   </p>
                                   <p
                                     style={{
@@ -467,7 +468,7 @@ export default function Page() {
                             }) +
                             " - New data is aggregated and updated every hour."
                           }
-                          data={locationNameCount}
+                          data={locationNameCount} /** gets loaded data */
                           xAxisKey="location"
                         />
                       </div>
@@ -491,7 +492,7 @@ export default function Page() {
                       }) +
                       " - New data is aggregated and updated every hour."
                     }
-                    data={hourlyAggregation}
+                    data={hourlyAggregation} /** gets loaded data */
                     xAxisKey="timestamp"
                   />
                 </div>

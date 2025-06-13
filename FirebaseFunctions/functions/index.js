@@ -7,12 +7,12 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
-exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
+exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => { /** aggregates hourly detections the hard way. replace with SQL call in postgres. */
   const currentDate = new Date();
   const previousDate = new Date(currentDate);
   previousDate.setHours(previousDate.getHours() - 1);
 
-  const formattedDate = previousDate
+  const formattedDate = previousDate /** set string format for the date and hour */
     .toISOString()
     .replace(/T/, "-")
     .split(":")[0];
@@ -23,13 +23,13 @@ exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
     .where("timestamp", "<", currentDate)
     .get();
 
-  const nameScores = {};
-  const locationScores = {};
-  const locationNameCountMap = {};
-  const nameCountArr = [];
-  const locationScoreStatsArr = [];
+  const nameScores = {}; /** global dictionary of species scores in the last hour */
+  const locationScores = {}; /** all scores per  location */
+  const locationNameCountMap = {};  /** species count per location */
+  const nameCountArr = []; /** total count per location */
+  const locationScoreStatsArr = []; /** indexing by species rather than as a list of objects */
 
-  const birdSpeciesCountMap = {};
+  const birdSpeciesCountMap = {}; /** counts by bird species */
 
   if (!detectionsSnapshot.empty) {
     detectionsSnapshot.forEach((doc) => {
@@ -82,7 +82,7 @@ exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
     }
   );
 
-  const nameScoreStatsArr = [];
+  const nameScoreStatsArr = []; /** global stats array by species */
   for (const name in nameScores) {
     const scores = nameScores[name];
     const avgScore =
@@ -97,7 +97,7 @@ exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
     });
   }
 
-  for (const location in locationScores) {
+  for (const location in locationScores) { /** summary stats on scores by location */
     const scores = locationScores[location];
     const avgScore =
       scores.reduce((sum, score) => sum + score, 0) / scores.length;
@@ -111,7 +111,7 @@ exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
     });
   }
 
-  const locationDiversityStatsArr = Object.entries(locationNameCountMap).map(
+  const locationDiversityStatsArr = Object.entries(locationNameCountMap).map( /** calcualtes diversity index */
     ([location, speciesCountMap]) => {
       const counts = Object.values(speciesCountMap);
       const total = counts.reduce((a, b) => a + b, 0);
@@ -150,8 +150,9 @@ exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
       }
     });
   }
+  /** end of stats calculation */
 
-  const aggregationDoc = {
+  const aggregationDoc = { /** create doc to return */
     date: formattedDate,
     species_count: nameCountArr,
     location_species_count: locationNameCountArr,
@@ -162,7 +163,7 @@ exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
     location_diversity_stats: locationDiversityStatsArr,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   };
-
+  /** sort the all time stats. This is doing heavy lifting that is better done with SQL. */
   await db
     .collection("hourly_aggregations")
     .doc(formattedDate)
@@ -232,10 +233,11 @@ exports.aggregateBirdDetections = onSchedule("0 * * * *", async () => {
     });
 
     console.log("Updated all-time aggregation with new detection data");
-  }
+  } /* end aggreagate update */
 });
 
-exports.aggregateDailyBirdDetections = onSchedule("0 0 * * *", async () => {
+
+exports.aggregateDailyBirdDetections = onSchedule("0 0 * * *", async () => { /** daily data calculations */
   const currentDate = new Date();
   const previousDate = new Date(currentDate);
   previousDate.setDate(previousDate.getDate() - 1);
@@ -551,7 +553,7 @@ exports.aggregateWeeklyBirdDetections = onSchedule("0 0 * * 0", async () => {
     locationScoreStats[location] = { avgScore, minScore, maxScore };
   }
 
-  const aggregationDoc = {
+  const aggregationDoc = { /** document summary */
     date: weekBeginningDate,
     species_count: speciesCountArr,
     location_species_count: locationSpeciesCountArr,
@@ -564,7 +566,7 @@ exports.aggregateWeeklyBirdDetections = onSchedule("0 0 * * 0", async () => {
   };
 
   await db
-    .collection("weekly_aggregations")
+    .collection("weekly_aggregations") /* Collection weekly_aggregations */
     .doc(weekBeginningDate)
     .set(aggregationDoc);
 

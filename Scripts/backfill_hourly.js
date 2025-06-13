@@ -1,17 +1,18 @@
-const fs = require("fs");
+const fs = require("fs"); /* firestore libraries */
 const path = require("path");
-const admin = require("firebase-admin");
-
-const serviceAccount = require("./biodiversidee-b5654-firebase-adminsdk-fbsvc-2caaf35a96.json");
+const admin = require("firebase-admin"); // required for firebase. Replace with appropriate library for postgres
+/* credentials for firebase */
+const serviceAccount = require("./biodiversidee-b5654-firebase-adminsdk-fbsvc-2caaf35a96.json"); 
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 const db = admin.firestore();
+/* replace with db initialisation for postgres */
 
 async function backfillHourlyAggregations(filePath) {
   try {
-    const fileContent = fs.readFileSync(filePath, "utf8");
+    const fileContent = fs.readFileSync(filePath, "utf8"); /* gets and sorts files - hopw is this stored in firestore? */
     const lines = fileContent.trim().split("\n");
 
     const startIndex = lines[0].includes(
